@@ -3,12 +3,14 @@
 #include <iomanip>
 #include <fstream>
 #include <format>
+#include "Tree.h"
 using namespace std;
 
 int table[6][6];
 int index[2][6];
 int fine[6][6];
 int n = 6;
+int Tree::counter = 0;
 
 void printTable()
 {
@@ -134,10 +136,13 @@ int main()
 	printTable();
 
 	int k = 1;
+	Tree* root = new Tree("S(0)");
 
 
 	//шаг 1 - приведение матрицы затрат
 	int r = 0;
+	int first = 0;
+	int last = 0;
 
 	//приведение по строкам
 	for (int i = 0; i < n; i++)
@@ -199,57 +204,164 @@ int main()
 		}
 	}
 
+	root->CurSetCost(r);
+
 	cout << k << ".1 Приведение матрицы затрат: r = " << r << endl << endl;
 	printTable();
 
-
-	//шаг 2 - вычисление штрафов за неиспользование
-	int maxFine = 0;
-
-	for (int i = 0; i < n; i++)
+	while (k < 4)
 	{
-		for (int j = 0; j < n; j++)
+		//шаг 2 - вычисление штрафов за неиспользование
+		int maxFine = 0;
+		int x, y;
+
+		for (int i = 0; i < n; i++)
 		{
-			if (table[i][j] == 0)
+			for (int j = 0; j < n; j++)
 			{
-				int m1 = -1, m2 = -1;
-
-				for (int h = 0; h < n && (m1 < 0 || m2 < 0); h++)
+				if (table[i][j] == 0)
 				{
-					if (table[i][h] >= 0 && h != j)
+					int m1 = -1, m2 = -1;
+
+					for (int h = 0; h < n && (m1 < 0 || m2 < 0); h++)
 					{
-						m1 = table[i][h];
+						if (table[i][h] >= 0 && h != j)
+						{
+							m1 = table[i][h];
+						}
+
+						if (table[h][j] >= 0 && h != i)
+						{
+							m2 = table[h][j];
+						}
 					}
 
-					if (table[h][j] >= 0 && h != i)
+					for (int h = 0; h < n; h++)
 					{
-						m2 = table[h][j];
+						if (table[i][h] < m1 && table[i][h] >= 0 && h != j)
+						{
+							m1 = table[i][h];
+						}
+
+						if (table[h][j] < m2 && table[h][j] >= 0 && h != i)
+						{
+							m2 = table[h][j];
+						}
+					}
+
+					fine[i][j] = m1 + m2;
+
+					if (fine[i][j] > maxFine)
+					{
+						maxFine = fine[i][j];
+						x = index[1][i];
+						y = index[0][j];
 					}
 				}
-
-				for (int h = 0; h < n; h++)
-				{
-					if (table[i][h] < m1 && table[i][h] >= 0 && h != j)
-					{
-						m1 = table[i][h];
-					}
-
-					if (table[h][j] < m2 && table[h][j] >= 0 && h != i)
-					{
-						m2 = table[h][j];
-					}
-				}
-
-				fine[i][j] = m1 + m2;
-
-				if (fine[i][j] > maxFine)
-					maxFine = fine[i][j];
 			}
 		}
+
+		if (first == 0)
+			first = x;
+
+		last = y;
+
+		cout << k << ".2 Вычисление штрафов: max = " << maxFine << endl << endl;
+		printFineTable();
+
+
+		//шаг 3 - добавление потомков
+		root->CurSetNameChildren(x, y);
+		cout << k << ".3 Добавление потомков: маршруты (" << x << ", " << y << ")" << ", -(" << x << ", " << y << ")" << endl << endl;
+		root->PrintTree();
+		cout << endl << endl;
+
+
+		//шаг 4 - вычисление оценок затрат
+		root->CurSetLeftCost(maxFine + r);
+
+		int row = -1, col = -1;
+
+		//вычеркивание строки и столбца
+		for (int i = 0; i < n && (row < 0 || col < 0); i++)
+		{
+			if (index[1][i] == x)
+			{
+				row = i;
+				index[1][i] = 0;
+			}
+
+			if (index[0][i] == y)
+			{
+				col = i;
+				index[0][i] = 0;
+			}
+		}
+
+		for (int i = row; i < n - 1; i++)
+		{
+			if (index[1][i] < index[1][i + 1])
+			{
+				index[1][i] = index[1][i + 1];
+				index[1][i + 1] = 0;
+
+				for (int j = 0; j < n; j++)
+				{
+					table[i][j] = table[i + 1][j];
+				}
+			}
+		}
+
+		for (int i = col; i < n - 1; i++)
+		{
+			if (index[0][i] < index[0][i + 1])
+			{
+				index[0][i] = index[0][i + 1];
+				index[0][i + 1] = 0;
+
+				for (int j = 0; j < n; j++)
+				{
+					table[j][i] = table[j][i + 1];
+				}
+			}
+		}
+
+		row = col = -1;
+
+		for (int i = 0; i < n && (col < 0 || row < 0); i++)
+		{
+			if (index[0][i] == first)
+			{
+				col = i;
+			}
+
+			if (index[1][i] == last)
+			{
+				row = i;
+			}
+		}
+
+		table[row][col] = -1;
+
+		n--;
+
+		cout << k << ".4 Вычисление оценок затрат: r = " << 0 << endl << endl;
+		printTable();
+
+		root->CurSetRightCost(r);
+		root->PrintTree();
+		cout << endl << endl;
+
+
+		//шаг 5 - выбор нового подмножества с минимальной оценкой
+		root->FindMinCost();
+		cout << k << ".5 Выбор нового подмножества: ";
+		root->PrintCurrent();
+		cout << endl << endl;
+		cout << endl << endl;
+
+		k++;
 	}
-	
-	cout << k << ".2 Вычисление штрафов: max = " << maxFine << endl << endl;
-	printFineTable();
 
 	return 0;
 }
