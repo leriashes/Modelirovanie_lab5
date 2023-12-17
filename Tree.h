@@ -46,6 +46,7 @@ public:
 	void RestoreTable(int* curtable, int* curindex, int* n);
 	int FindWay(int* first, int* last);
 	int FindWay();
+	void PrintWay();
 	list<int> MakeChain(list<int> way);
 };
 

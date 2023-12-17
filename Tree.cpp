@@ -17,7 +17,12 @@ void Tree::FindNewCur()
 	}
 	else
 	{
-		if (current->left != NULL || current->cost > cost)
+		if ((current->left != NULL || current->cost > cost) && cost >= 0)
+		{
+			current = this;
+		}
+
+		if (current->cost == cost && !current->node && node)
 		{
 			current = this;
 		}
@@ -37,6 +42,11 @@ void Tree::CurSetCost(int cost)
 void Tree::CurSetLeftCost(int cost)
 {
 	current->left->cost = cost + current->cost;
+
+	if (cost < 0)
+	{
+		current->left->cost = -2;
+	}
 }
 
 void Tree::FindMinCost()
@@ -48,6 +58,7 @@ void Tree::PrintCurrent()
 {
 	cout << current->number << ") " << current->name;
 	if (current->cost >= 0) cout << " [" << current->cost << "]";
+	if (current->cost == -2) cout << " [inf]";
 }
 
 void Tree::SaveTable(int curtable[6][6], int curindex[2][6], int n)
@@ -101,6 +112,35 @@ int Tree::FindWay(int* start, int* end)
 	*end = way.back();
 
 	return way.size() / 2;
+}
+
+void Tree::PrintWay()
+{
+	list<int> way = { current->first , current->last };
+	int lastlen = 1;
+
+	do
+	{
+		lastlen = way.size() / 2;
+		way = current->MakeChain(way);
+	} while (way.size() / 2 > lastlen);
+
+	int first = way.front();
+
+	cout << way.front() << " - ";
+	way.pop_front();
+
+	cout << way.front() << " - ";
+	way.pop_front();
+
+	for (int i = 0; i < lastlen - 1; i++)
+	{
+		way.pop_front();
+		cout << way.front() << " - ";
+		way.pop_front();
+	}
+
+	cout << first;
 }
 
 int Tree::FindWay()
@@ -207,15 +247,18 @@ void Tree::PrintTree()
 {
 	cout << number << ") " << name;
 	if (cost >= 0) cout << " [" << cost << "]";
+	if (cost == -2) cout << " [inf]";
 
 	if (left != NULL && right != NULL)
 	{
 		cout << " ------ " << left->number << ") " << left->name;
 		if (left->cost >= 0) cout << " [" << left->cost << "]";
+		if (left->cost == -2) cout << " [inf]";
 		cout << endl;
 		cout << "             |" << endl;
 		cout << "             ------ " << right->number << ") " << right->name;
 		if (right->cost >= 0) cout << " [" << right->cost << "]";
+		if (right->cost == -2) cout << " [inf]";
 		cout << endl;
 
 		left->PrintTree();
