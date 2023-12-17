@@ -168,7 +168,7 @@ int main()
 {
 	setlocale(LC_ALL, "Rus");
 
-    ifstream f("input1.txt");
+    ifstream f("input.txt");
 
 	for (int i = 0; i < n; i++)
 	{
@@ -435,7 +435,7 @@ int main()
 			cout << endl << endl;
 			cout << endl << endl;
 
-			if (root->FindWay() >= 5 || n == 0)
+			if (root->FindWay() == 6)
 				break;
 
 			k++;

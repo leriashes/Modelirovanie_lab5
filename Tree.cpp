@@ -111,7 +111,7 @@ int Tree::FindWay(int* start, int* end)
 	{
 		lastlen = way.size() / 2;
 		way = current->MakeChain(way);
-	} while (way.size() / 2 > lastlen);
+	} while (way.size() / 2 > lastlen && way.front() != way.back());
 
 	*start = way.front();
 	*end = way.back();
@@ -128,7 +128,7 @@ void Tree::PrintWay()
 	{
 		lastlen = way.size() / 2;
 		way = current->MakeChain(way);
-	} while (way.size() / 2 > lastlen);
+	} while (way.size() / 2 > lastlen && way.front() != way.back());
 
 	int first = way.front();
 
@@ -173,7 +173,7 @@ int Tree::FindWay()
 	{
 		lastlen = way.size() / 2;
 		way = current->MakeChain(way);
-	} while (way.size() / 2 > lastlen);
+	} while (way.size() / 2 > lastlen && way.front() != way.back());
 
 	return way.size() / 2;
 }
@@ -239,8 +239,7 @@ list<int> Tree::MakeChain(list<int> way)
 				way.push_back(last);
 				added = true;
 			}
-
-			if (last == way.front())
+			else if (last == way.front())
 			{
 				way.push_front(last);
 				way.push_front(first);
