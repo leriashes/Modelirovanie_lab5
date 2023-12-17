@@ -40,6 +40,7 @@ public:
 	void CurSetRightCost(int cost);
 	void PrintTree();
 	void PrintCurrent();
+	int GetCurCost();
 	void FindMinCost();
 	void SaveTable(int curtable[6][6], int curindex[2][6], int n);
 	void RightSaveTable(int curtable[6][6], int curindex[2][6], int n);
@@ -47,6 +48,7 @@ public:
 	int FindWay(int* first, int* last);
 	int FindWay();
 	void PrintWay();
+	bool CheckVariants();
 	list<int> MakeChain(list<int> way);
 };
 

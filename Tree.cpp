@@ -79,6 +79,11 @@ void Tree::SaveTable(int curtable[6][6], int curindex[2][6], int n)
 	current->n = n;
 }
 
+int Tree::GetCurCost()
+{
+	return current->cost;
+}
+
 void Tree::RightSaveTable(int curtable[6][6], int curindex[2][6], int n)
 {
 	for (int i = 0; i < 6; i++)
@@ -141,6 +146,22 @@ void Tree::PrintWay()
 	}
 
 	cout << first;
+}
+
+bool Tree::CheckVariants()
+{
+	Tree* last = current;
+	int lastcost = current->cost;
+	current->cost += 1;
+
+	FindNewCur();
+
+	last->cost = -2;
+
+	if (current == last || current->cost < 0 || current->cost > lastcost)
+		return false;
+
+	return true;
 }
 
 int Tree::FindWay()

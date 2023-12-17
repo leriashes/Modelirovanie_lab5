@@ -220,440 +220,259 @@ int main()
 	int r = 0;
 	int first = 0;
 	int last = 0;
+	bool cont = false;
 
 	r = privedenie();
 
 	root->CurSetCost(r);
+	int opt = -1;
 
-	/*cout << k << ".1 Приведение матрицы затрат: r = " << r << endl << endl;
-	if (r > 0) printTable();
-
-	root->SaveTable(table, index, n);*/
-
-
-	while (k < 16)
+	do
 	{
-		if (k > 1)
-			r = privedenie();
 
-		cout << k << ".1 Приведение матрицы затрат: r = " << r << endl << endl;
-		if (r > 0) printTable();
-
-		root->SaveTable(table, index, n);
-
-		//шаг 2 - вычисление штрафов за неиспользование
-		int maxFine = -1;
-		int x, y;
-		bool infi = false;
-
-		for (int i = 0; i < n; i++)
+		while (true)
 		{
-			for (int j = 0; j < n; j++)
+
+			//шаг 1 - приведение матрицы затрат
+
+			if (k > 1)
+				r = privedenie();
+
+			cout << k << ".1 Приведение матрицы затрат: r = " << r << endl << endl;
+			if (r > 0) printTable();
+
+			root->SaveTable(table, index, n);
+
+			//шаг 2 - вычисление штрафов за неиспользование
+			int maxFine = -1;
+			int x, y;
+			bool infi = false;
+
+			for (int i = 0; i < n; i++)
 			{
-				if (table[i][j] == 0)
+				for (int j = 0; j < n; j++)
 				{
-					int m1 = -1, m2 = -1;
-
-					for (int h = 0; h < n && (m1 < 0 || m2 < 0); h++)
+					if (table[i][j] == 0)
 					{
-						if (table[i][h] >= 0 && h != j)
+						int m1 = -1, m2 = -1;
+
+						for (int h = 0; h < n && (m1 < 0 || m2 < 0); h++)
 						{
-							m1 = table[i][h];
+							if (table[i][h] >= 0 && h != j)
+							{
+								m1 = table[i][h];
+							}
+
+							if (table[h][j] >= 0 && h != i)
+							{
+								m2 = table[h][j];
+							}
 						}
 
-						if (table[h][j] >= 0 && h != i)
+						for (int h = 0; h < n; h++)
 						{
-							m2 = table[h][j];
-						}
-					}
+							if (table[i][h] < m1 && table[i][h] >= 0 && h != j)
+							{
+								m1 = table[i][h];
+							}
 
-					for (int h = 0; h < n; h++)
-					{
-						if (table[i][h] < m1 && table[i][h] >= 0 && h != j)
+							if (table[h][j] < m2 && table[h][j] >= 0 && h != i)
+							{
+								m2 = table[h][j];
+							}
+						}
+
+						fine[i][j] = m1 + m2;
+
+						if (fine[i][j] > maxFine && !infi)
 						{
-							m1 = table[i][h];
+							maxFine = fine[i][j];
+							x = index[1][i];
+							y = index[0][j];
 						}
 
-						if (table[h][j] < m2 && table[h][j] >= 0 && h != i)
+						if (fine[i][j] < 0)
 						{
-							m2 = table[h][j];
+							x = index[1][i];
+							y = index[0][j];
+							maxFine = -2;
+							infi = true;
 						}
-					}
-
-					fine[i][j] = m1 + m2;
-
-					if (fine[i][j] > maxFine && !infi)
-					{
-						maxFine = fine[i][j];
-						x = index[1][i];
-						y = index[0][j];
-					}
-
-					if (fine[i][j] < 0)
-					{
-						x = index[1][i];
-						y = index[0][j];
-						maxFine = -2;
-						infi = true;
 					}
 				}
 			}
+
+
+			if (first == 0)
+				first = x;
+
+			last = y;
+
+			if (infi)
+			{
+				cout << k << ".2 Вычисление штрафов: max = inf" << endl << endl;
+			}
+			else
+			{
+				cout << k << ".2 Вычисление штрафов: max = " << maxFine << endl << endl;
+			}
+
+			printFineTable();
+
+
+			for (int i = 0; i < n; i++)
+			{
+				for (int j = 0; j < n; j++)
+				{
+					fine[i][j] = 0;
+				}
+			}
+
+
+			//шаг 3 - добавление потомков
+			root->CurSetNameChildren(x, y);
+			cout << k << ".3 Добавление потомков: маршруты (" << x << ", " << y << ")" << ", -(" << x << ", " << y << ")" << endl << endl;
+			root->PrintTree();
+			cout << endl << endl;
+
+
+			//шаг 4 - вычисление оценок затрат
+			root->CurSetLeftCost(maxFine);
+
+
+			int row = -1, col = -1;
+			int xw, yw;
+			xw = x;
+			yw = y;
+
+			int len = root->FindWay(&xw, &yw);
+
+
+			//вычеркивание строки и столбца
+			for (int i = 0; i < n && (row < 0 || col < 0); i++)
+			{
+				if (index[1][i] == x)
+				{
+					row = i;
+					index[1][i] = 0;
+				}
+
+				if (index[0][i] == y)
+				{
+					col = i;
+					index[0][i] = 0;
+				}
+			}
+
+			for (int i = row; i < n - 1; i++)
+			{
+				if (index[1][i] < index[1][i + 1])
+				{
+					index[1][i] = index[1][i + 1];
+					index[1][i + 1] = 0;
+
+					for (int j = 0; j < n; j++)
+					{
+						table[i][j] = table[i + 1][j];
+					}
+				}
+			}
+
+			for (int i = col; i < n - 1; i++)
+			{
+				if (index[0][i] < index[0][i + 1])
+				{
+					index[0][i] = index[0][i + 1];
+					index[0][i + 1] = 0;
+
+					for (int j = 0; j < n; j++)
+					{
+						table[j][i] = table[j][i + 1];
+					}
+				}
+			}
+
+			row = col = -1;
+
+			for (int i = 0; i < n && (col < 0 || row < 0); i++)
+			{
+				if (index[0][i] == xw)
+				{
+					col = i;
+				}
+
+				if (index[1][i] == yw)
+				{
+					row = i;
+				}
+			}
+
+			if (len < 5)
+				table[row][col] = -1;
+			else
+				table[row][col] = 0;
+
+			n--;
+
+
+
+			int r1 = privedenie();
+
+			cout << k << ".4 Вычисление оценок затрат: r = " << r1 << endl << endl;
+			printTable();
+
+			root->CurSetRightCost(r1);
+			root->PrintTree();
+			cout << endl << endl;
+
+			root->RightSaveTable(table, index, n);
+
+			//шаг 5 - выбор нового подмножества с минимальной оценкой
+			root->FindMinCost();
+			cout << k << ".5 Выбор нового подмножества: ";
+			root->PrintCurrent();
+			root->RestoreTable(&table[0][0], &index[0][0], &n);
+			cout << endl << endl;
+			cout << endl << endl;
+
+			if (root->FindWay() >= 5 || n == 0)
+				break;
+
+			k++;
 		}
 
-
-		if (first == 0)
-			first = x;
-
-		last = y;
-
-		if (infi)
+		if (opt == -1 || opt >= root->GetCurCost())
 		{
-			cout << k << ".2 Вычисление штрафов: max = inf"  << endl << endl;
+			cout << "\nНайден оптимальный маршрут: ";
+			opt = root->GetCurCost();
 		}
 		else
 		{
-			cout << k << ".2 Вычисление штрафов: max = " << maxFine << endl << endl;
-		}
-		
-		printFineTable();
-
-
-		for (int i = 0; i < n; i++)
-		{
-			for (int j = 0; j < n; j++)
-			{
-				fine[i][j] = 0;
-			}
+			cout << "\nНайден маршрут (не оптим.): ";
 		}
 
-
-		//шаг 3 - добавление потомков
-		root->CurSetNameChildren(x, y);
-		cout << k << ".3 Добавление потомков: маршруты (" << x << ", " << y << ")" << ", -(" << x << ", " << y << ")" << endl << endl;
-		root->PrintTree();
+		root->GetCurCost();
+		root->PrintWay();
+		cout << "\nСтоимость: " << root->GetCurCost();
 		cout << endl << endl;
 
+		cont = root->CheckVariants();
 
-		//шаг 4 - вычисление оценок затрат
-		root->CurSetLeftCost(maxFine);
-
-
-		int row = -1, col = -1;
-		int xw, yw;
-		xw = x;
-		yw = y;
-
-		int len = root->FindWay(&xw, &yw);
-
-
-		//вычеркивание строки и столбца
-		for (int i = 0; i < n && (row < 0 || col < 0); i++)
+		if (cont)
 		{
-			if (index[1][i] == x)
-			{
-				row = i;
-				index[1][i] = 0;
-			}
-
-			if (index[0][i] == y)
-			{
-				col = i;
-				index[0][i] = 0;
-			}
-		}
-
-		for (int i = row; i < n - 1; i++)
-		{
-			if (index[1][i] < index[1][i + 1])
-			{
-				index[1][i] = index[1][i + 1];
-				index[1][i + 1] = 0;
-
-				for (int j = 0; j < n; j++)
-				{
-					table[i][j] = table[i + 1][j];
-				}
-			}
-		}
-
-		for (int i = col; i < n - 1; i++)
-		{
-			if (index[0][i] < index[0][i + 1])
-			{
-				index[0][i] = index[0][i + 1];
-				index[0][i + 1] = 0;
-
-				for (int j = 0; j < n; j++)
-				{
-					table[j][i] = table[j][i + 1];
-				}
-			}
-		}
-
-		row = col = -1;
-
-		for (int i = 0; i < n && (col < 0 || row < 0); i++)
-		{
-			if (index[0][i] == xw)
-			{
-				col = i;
-			}
-
-			if (index[1][i] == yw)
-			{
-				row = i;
-			}
-		}
-
-		if (len < 5)
-			table[row][col] = -1;
-		else
-			table[row][col] = 0;
-
-		n--;
+			cout << "Переход к другому варианту решения. Выбор нового подмножества: ";
+			root->PrintCurrent();
+			root->RestoreTable(&table[0][0], &index[0][0], &n);
+			cout << endl << endl;
+			cout << endl << endl;
 
 
-
-		int r1 = privedenie();
-
-		cout << k << ".4 Вычисление оценок затрат: r = " << r1 << endl << endl;
-		printTable();
-
-		root->CurSetRightCost(r1);
-		root->PrintTree();
-		cout << endl << endl;
-
-		root->RightSaveTable(table, index, n);
-
-		//шаг 5 - выбор нового подмножества с минимальной оценкой
-		root->FindMinCost();
-		cout << k << ".5 Выбор нового подмножества: ";
-		root->PrintCurrent();
-		root->RestoreTable(&table[0][0], &index[0][0], &n);
-		cout << endl << endl;
-		cout << endl << endl;
-
-		if (root->FindWay() >= 5 || n == 0)
-			break;
-
-		k++;
-	}
-
-
-	cout << "\nНайден оптимальный маршрут: ";
-	root->PrintWay();
-
-	_getch();
-
-	root->CurSetCost(-2);
-
-	while (k < 16)
-	{
-		if (k > 1)
-			r = privedenie();
-
-		cout << k << ".1 Приведение матрицы затрат: r = " << r << endl << endl;
-		if (r > 0) printTable();
-
-		root->SaveTable(table, index, n);
-
-		//шаг 2 - вычисление штрафов за неиспользование
-		int maxFine = 0;
-		int x, y;
-		bool infi = false;
-
-		for (int i = 0; i < n; i++)
-		{
-			for (int j = 0; j < n; j++)
-			{
-				if (table[i][j] == 0)
-				{
-					int m1 = -1, m2 = -1;
-
-					for (int h = 0; h < n && (m1 < 0 || m2 < 0); h++)
-					{
-						if (table[i][h] >= 0 && h != j)
-						{
-							m1 = table[i][h];
-						}
-
-						if (table[h][j] >= 0 && h != i)
-						{
-							m2 = table[h][j];
-						}
-					}
-
-					for (int h = 0; h < n; h++)
-					{
-						if (table[i][h] < m1 && table[i][h] >= 0 && h != j)
-						{
-							m1 = table[i][h];
-						}
-
-						if (table[h][j] < m2 && table[h][j] >= 0 && h != i)
-						{
-							m2 = table[h][j];
-						}
-					}
-
-					fine[i][j] = m1 + m2;
-
-					if (fine[i][j] > maxFine && !infi)
-					{
-						maxFine = fine[i][j];
-						x = index[1][i];
-						y = index[0][j];
-					}
-
-					if (fine[i][j] == -2)
-					{
-						x = index[1][i];
-						y = index[0][j];
-						maxFine = -2;
-						infi = true;
-					}
-				}
-			}
+			_getch();
 		}
 
 
-		if (first == 0)
-			first = x;
+	} while (cont);
 
-		last = y;
-
-		if (infi)
-		{
-			cout << k << ".2 Вычисление штрафов: max = inf" << endl << endl;
-		}
-		else
-		{
-			cout << k << ".2 Вычисление штрафов: max = " << maxFine << endl << endl;
-		}
-
-		printFineTable();
-
-
-		for (int i = 0; i < n; i++)
-		{
-			for (int j = 0; j < n; j++)
-			{
-				fine[i][j] = 0;
-			}
-		}
-
-
-		//шаг 3 - добавление потомков
-		root->CurSetNameChildren(x, y);
-		cout << k << ".3 Добавление потомков: маршруты (" << x << ", " << y << ")" << ", -(" << x << ", " << y << ")" << endl << endl;
-		root->PrintTree();
-		cout << endl << endl;
-
-
-		//шаг 4 - вычисление оценок затрат
-		root->CurSetLeftCost(maxFine);
-
-
-		int row = -1, col = -1;
-		int xw, yw;
-		xw = x;
-		yw = y;
-
-		int len = root->FindWay(&xw, &yw);
-
-
-		//вычеркивание строки и столбца
-		for (int i = 0; i < n && (row < 0 || col < 0); i++)
-		{
-			if (index[1][i] == x)
-			{
-				row = i;
-				index[1][i] = 0;
-			}
-
-			if (index[0][i] == y)
-			{
-				col = i;
-				index[0][i] = 0;
-			}
-		}
-
-		for (int i = row; i < n - 1; i++)
-		{
-			if (index[1][i] < index[1][i + 1])
-			{
-				index[1][i] = index[1][i + 1];
-				index[1][i + 1] = 0;
-
-				for (int j = 0; j < n; j++)
-				{
-					table[i][j] = table[i + 1][j];
-				}
-			}
-		}
-
-		for (int i = col; i < n - 1; i++)
-		{
-			if (index[0][i] < index[0][i + 1])
-			{
-				index[0][i] = index[0][i + 1];
-				index[0][i + 1] = 0;
-
-				for (int j = 0; j < n; j++)
-				{
-					table[j][i] = table[j][i + 1];
-				}
-			}
-		}
-
-		row = col = -1;
-
-		for (int i = 0; i < n && (col < 0 || row < 0); i++)
-		{
-			if (index[0][i] == xw)
-			{
-				col = i;
-			}
-
-			if (index[1][i] == yw)
-			{
-				row = i;
-			}
-		}
-
-		if (len < 5)
-			table[row][col] = -1;
-		else
-			table[row][col] = 0;
-
-		n--;
-
-
-
-		int r1 = privedenie();
-
-		cout << k << ".4 Вычисление оценок затрат: r = " << r1 << endl << endl;
-		printTable();
-
-		root->CurSetRightCost(r1);
-		root->PrintTree();
-		cout << endl << endl;
-
-		root->RightSaveTable(table, index, n);
-
-		//шаг 5 - выбор нового подмножества с минимальной оценкой
-		root->FindMinCost();
-		cout << k << ".5 Выбор нового подмножества: ";
-		root->PrintCurrent();
-		root->RestoreTable(&table[0][0], &index[0][0], &n);
-		cout << endl << endl;
-		cout << endl << endl;
-
-		if (root->FindWay() >= 5 || n == 0)
-			break;
-
-		k++;
-	}
 
 	return 0;
 }
