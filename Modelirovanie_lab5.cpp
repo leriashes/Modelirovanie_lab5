@@ -11,7 +11,8 @@ int index[2][6];
 int fine[6][6];
 int n = 6;
 int Tree::counter = 0;
-
+Tree* Tree::current = (Tree*)NULL;
+ 
 void printTable()
 {
 	cout << "     ";
@@ -86,63 +87,9 @@ void printFineTable()
 	cout << endl << endl << endl;
 }
 
-int main()
+int privedenie()
 {
-	setlocale(LC_ALL, "Rus");
-
-    ifstream f("input.txt");
-
-	for (int i = 0; i < n; i++)
-	{
-		index[0][i] = i + 1;
-		index[1][i] = i + 1;
-
-		for (int j = 0; j < n; j++)
-		{
-			fine[i][j] = 0;
-		}
-	}
-
-	//Файл для чтения не открылся
-	if (!f)
-	{
-		cout << "Не удалось открыть файл 'input.txt'";
-		return -1;
-	}
-
-	int i = 0, j = 0;
-
-	//Заполнение таблицы
-	while (!f.eof())
-	{
-		f >> table[i][j++];
-
-		if (j == n)
-		{
-			j = 0;
-			i += 1;
-		}
-
-		if (i == n)
-		{
-			break;
-		}
-	}
-
-	f.close();
-
-
-	cout << "Исходная матрица затрат" << endl << endl;
-	printTable();
-
-	int k = 1;
-	Tree* root = new Tree("S(0)");
-
-
-	//шаг 1 - приведение матрицы затрат
 	int r = 0;
-	int first = 0;
-	int last = 0;
 
 	//приведение по строкам
 	for (int i = 0; i < n; i++)
@@ -204,13 +151,86 @@ int main()
 		}
 	}
 
-	root->CurSetCost(r);
+	return r;
+}
 
-	cout << k << ".1 Приведение матрицы затрат: r = " << r << endl << endl;
+int main()
+{
+	setlocale(LC_ALL, "Rus");
+
+    ifstream f("input.txt");
+
+	for (int i = 0; i < n; i++)
+	{
+		index[0][i] = i + 1;
+		index[1][i] = i + 1;
+
+		for (int j = 0; j < n; j++)
+		{
+			fine[i][j] = 0;
+		}
+	}
+
+	//Файл для чтения не открылся
+	if (!f)
+	{
+		cout << "Не удалось открыть файл 'input.txt'";
+		return -1;
+	}
+
+	int i = 0, j = 0;
+
+	//Заполнение таблицы
+	while (!f.eof())
+	{
+		f >> table[i][j++];
+
+		if (j == n)
+		{
+			j = 0;
+			i += 1;
+		}
+
+		if (i == n)
+		{
+			break;
+		}
+	}
+
+	f.close();
+
+
+	cout << "Исходная матрица затрат" << endl << endl;
 	printTable();
 
-	while (k < 4)
+	int k = 1;
+	Tree* root = new Tree("S(0)");
+
+	//шаг 1 - приведение матрицы затрат
+	int r = 0;
+	int first = 0;
+	int last = 0;
+
+	r = privedenie();
+
+	root->CurSetCost(r);
+
+	/*cout << k << ".1 Приведение матрицы затрат: r = " << r << endl << endl;
+	if (r > 0) printTable();
+
+	root->SaveTable(table, index, n);*/
+
+
+	while (k < 7)
 	{
+
+		r = privedenie();
+
+		cout << k << ".1 Приведение матрицы затрат: r = " << r << endl << endl;
+		if (r > 0) printTable();
+
+		root->SaveTable(table, index, n);
+
 		//шаг 2 - вычисление штрафов за неиспользование
 		int maxFine = 0;
 		int x, y;
@@ -278,9 +298,16 @@ int main()
 
 
 		//шаг 4 - вычисление оценок затрат
-		root->CurSetLeftCost(maxFine + r);
+		root->CurSetLeftCost(maxFine);
+
 
 		int row = -1, col = -1;
+		int xw, yw;
+		xw = x;
+		yw = y;
+
+		int len = root->FindWay(&xw, &yw);
+
 
 		//вычеркивание строки и столбца
 		for (int i = 0; i < n && (row < 0 || col < 0); i++)
@@ -330,12 +357,12 @@ int main()
 
 		for (int i = 0; i < n && (col < 0 || row < 0); i++)
 		{
-			if (index[0][i] == first)
+			if (index[0][i] == xw)
 			{
 				col = i;
 			}
 
-			if (index[1][i] == last)
+			if (index[1][i] == yw)
 			{
 				row = i;
 			}
@@ -345,20 +372,27 @@ int main()
 
 		n--;
 
-		cout << k << ".4 Вычисление оценок затрат: r = " << 0 << endl << endl;
+		int r1 = privedenie();
+
+		cout << k << ".4 Вычисление оценок затрат: r = " << r1 << endl << endl;
 		printTable();
 
-		root->CurSetRightCost(r);
+		root->CurSetRightCost(r1);
 		root->PrintTree();
 		cout << endl << endl;
 
+		root->RightSaveTable(table, index, n);
 
 		//шаг 5 - выбор нового подмножества с минимальной оценкой
 		root->FindMinCost();
 		cout << k << ".5 Выбор нового подмножества: ";
 		root->PrintCurrent();
+		root->RestoreTable(&table[0][0], &index[0][0], &n);
 		cout << endl << endl;
 		cout << endl << endl;
+
+		if (root->FindWay() >= 5 || n == 0)
+			break;
 
 		k++;
 	}
